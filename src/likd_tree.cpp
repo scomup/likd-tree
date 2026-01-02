@@ -213,16 +213,6 @@ void KDTree<PointType>::collect(Node* node, PointVector<PointType>& pts) {
 }
 
 template <typename PointType>
-typename KDTree<PointType>::Node* KDTree<PointType>::rebuild(Node* node,
-                                                             int axis) {
-  // this function is not thread-safe; dont use it now!
-  PointVector<PointType> pts;
-  collect(node, pts);
-  delete node;
-  return buildRecursive(pts, 0, pts.size(), axis);
-}
-
-template <typename PointType>
 typename KDTree<PointType>::Node* KDTree<PointType>::buildRecursive(
     PointVector<PointType>& pts, size_t l, size_t r, int axis) {
   if (l >= r)

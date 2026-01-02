@@ -59,13 +59,10 @@ class KDTree {
   void addPoints(const PointVector<PointType>& pts);
   std::pair<const PointType*, float> nearestNeighbors(
       const PointType& query) const;
-  
   // Batch query API - queries multiple points at once
   void nearestNeighbors(const PointVector<PointType>& queries,
                             PointVector<PointType>& results,
                             std::vector<float>& distances) const;
-
-  
   int size() const;
 
  private:
@@ -82,7 +79,6 @@ class KDTree {
   void update(Node* node);
   bool needRebuild(Node* node) const;
   void collect(Node* node, PointVector<PointType>& pts);
-  Node* rebuild(Node* node, int axis);
   Node* buildRecursive(PointVector<PointType>& pts, size_t l, size_t r,
                        int axis);
   void nearestNeighborInternal(Node* node, const PointType& query,
