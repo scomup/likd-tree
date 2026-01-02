@@ -5,8 +5,6 @@ Distributed under MIT license. See LICENSE for more information.
 
 
 #include <pcl/point_types.h>
-#include <chrono>
-#include <iostream>
 #include "likd_tree.h"
 
 
@@ -321,8 +319,6 @@ void KDTree<PointType>::backgroundRebuild(std::vector<Node*> nodes_to_rebuild) {
   // Critical section - swap pointers (brief exclusive lock)
   {
     std::unique_lock<std::shared_mutex> lock(tree_mutex_);
-
-    auto t1 = std::chrono::high_resolution_clock::now();
 
     for (size_t i = 0; i < nodes_to_rebuild.size(); ++i) {
       Node* new_node = new_nodes[i];

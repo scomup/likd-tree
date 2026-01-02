@@ -9,9 +9,7 @@ Distributed under MIT license. See LICENSE for more information.
 
 #include <Eigen/Core>
 #include <algorithm>
-#include <array>
 #include <atomic>
-#include <cmath>
 #include <limits>
 #include <mutex>
 #include <optional>
