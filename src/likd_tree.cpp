@@ -320,6 +320,8 @@ void KDTree<PointType>::backgroundRebuild(std::vector<Node*> nodes_to_rebuild) {
         // This was the root
         root_ = new_node;
       }
+      // Delete old subtree
+      delete nodes_to_rebuild[i];
     }
   }
   // try to insert pending points accumulated during rebuild
