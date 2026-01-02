@@ -124,7 +124,7 @@ void KDTree<PointType>::addPoints(const PointVector<PointType>& pts) {
 }
 
 template <typename PointType>
-void KDTree<PointType>::nearestNeighbor(const PointVector<PointType>& queries,
+void KDTree<PointType>::nearestNeighbors(const PointVector<PointType>& queries,
                                         PointVector<PointType>& results,
                                         std::vector<float>& distances) const {
   std::shared_lock<std::shared_mutex> lock(tree_mutex_);

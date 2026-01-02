@@ -42,7 +42,7 @@ void queryMyKDtree(const KDTree<PointType>& tree,
   PointVector<PointType> queries(pts.begin(), pts.begin() + Q);
   PointVector<PointType> nn_pts;
   std::vector<float> nn_dists;
-  tree.nearestNeighbor(queries, nn_pts, nn_dists);
+  tree.nearestNeighbors(queries, nn_pts, nn_dists);
 
 }
 

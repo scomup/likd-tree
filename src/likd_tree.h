@@ -57,11 +57,11 @@ class KDTree {
 
   void build(const PointVector<PointType>& pts);
   void addPoints(const PointVector<PointType>& pts);
-  std::pair<const PointType*, float> nearestNeighbor(
+  std::pair<const PointType*, float> nearestNeighbors(
       const PointType& query) const;
   
   // Batch query API - queries multiple points at once
-  void nearestNeighbor(const PointVector<PointType>& queries,
+  void nearestNeighbors(const PointVector<PointType>& queries,
                             PointVector<PointType>& results,
                             std::vector<float>& distances) const;
 

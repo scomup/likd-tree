@@ -9,6 +9,26 @@
 
 using PointType = pcl::PointXYZ;
 
+void bruteForceNN(const PointVector<PointType>& pts,
+                  const PointVector<PointType>& query,
+                  std::vector<const PointType*>& best_pt,
+                  std::vector<float>& best_dist2) {
+  best_dist2.resize(query.size(), std::numeric_limits<float>::max());
+  best_pt.resize(query.size(), nullptr);
+  for (size_t i = 0; i < query.size(); ++i) {
+    for (const auto& p : pts) {
+      float dx = p.x - query[i].x;
+      float dy = p.y - query[i].y;
+      float dz = p.z - query[i].z;
+      float d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 < best_dist2[i]) {
+        best_dist2[i] = d2;
+        best_pt[i] = &p;
+      }
+    }
+  }
+}
+
 int main() {
   std::cout << "=== likd-tree Demo ===" << std::endl;
   std::cout << "A Lightweight Incremental KD-Tree implementation\n" << std::endl;
@@ -61,23 +81,31 @@ int main() {
     queries.push_back(q);
   }
   
-  PointVector<PointType> results;
-  std::vector<float> distances;
-  tree.nearestNeighbor(queries, results, distances);
+  PointVector<PointType> res;
+  std::vector<float> dists;
+  tree.nearestNeighbors(queries, res, dists);
+  std::vector<const PointType*> bf_res;
+  std::vector<float> bf_dists;
+  bruteForceNN(points, queries, bf_res, bf_dists); // Just to show brute-force usage
   
   std::cout << "\n   Query results:" << std::endl;
   for (size_t i = 0; i < queries.size(); ++i) {
-    std::cout << "   Query " << i << ": ";
-    std::cout << "(" << queries[i].x << ", " << queries[i].y << ", " << queries[i].z << ") ";
-    std::cout << "-> Nearest: (" << results[i].x << ", " << results[i].y << ", " << results[i].z << ") ";
-    std::cout << "Distance²: " << distances[i] << std::endl;
+    // theck the results same as brute-force
+    bool match = (bf_res[i] != nullptr &&
+                  res[i].x == bf_res[i]->x &&
+                  res[i].y == bf_res[i]->y &&
+                  res[i].z == bf_res[i]->z);
+    printf(" res[%zu]: (%.3f, %.3f, %.3f), dist2=%.3f %s\n",
+           i, res[i].x, res[i].y,  res[i].z, dists[i],
+           match ? "[MATCH]" : "[MISMATCH]");
   }
+  
   
   std::cout << "\n=== Demo completed! ===" << std::endl;
   std::cout << "\nKey features demonstrated:" << std::endl;
   std::cout << "  ✓ Batch building with build()" << std::endl;
   std::cout << "  ✓ Incremental insertion with addPoints()" << std::endl;
-  std::cout << "  ✓ Batch queries with nearestNeighbor()" << std::endl;
+  std::cout << "  ✓ Batch queries with nearestNeighbors()" << std::endl;
   std::cout << "  ✓ Thread-safe concurrent queries" << std::endl;
   std::cout << "  ✓ Automatic background rebalancing" << std::endl;
   

@@ -59,7 +59,7 @@ tree.addPoints(new_points);
 PointVector<PointType> queries = {...};
 PointVector<PointType> results;
 std::vector<float> distances;
-tree.nearestNeighbor(queries, results, distances);
+tree.nearestNeighbors(queries, results, distances);
 ```
 
 ## 🛠️ Build Instructions
