@@ -39,7 +39,7 @@ template <typename PointType>
 float KDTree<PointType>::AABB::sqrDist(const PointType& pt) const {
   float d2 = 0;
   for (int i = 0; i < KDTREE_DIM; ++i) {
-    float v = (i == 0 ? pt.x : (i == 1 ? pt.y : pt.z));
+    float v = coord(pt, i);
     if (v < min[i])
       d2 += (min[i] - v) * (min[i] - v);
     else if (v > max[i])
@@ -228,12 +228,9 @@ typename KDTree<PointType>::Node* KDTree<PointType>::buildRecursive(
   if (l >= r)
     return nullptr;
   size_t m = l + (r - l) / 2;
-  auto coord = [axis](const PointType& pt) {
-    return axis == 0 ? pt.x : (axis == 1 ? pt.y : pt.z);
-  };
   std::nth_element(pts.begin() + l, pts.begin() + m, pts.begin() + r,
                    [&](const PointType& a, const PointType& b) {
-                     return coord(a) < coord(b);
+                     return coord(a, axis) < coord(b, axis);
                    });
   Node* node = new Node(pts[m], axis);
   node->left = buildRecursive(pts, l, m, (axis + 1) % KDTREE_DIM);
@@ -271,17 +268,6 @@ void KDTree<PointType>::nearestNeighborInternal(Node* node,
     nearestNeighborInternal(near, query, best_pt, best_dist2);
   if (far && far->aabb.sqrDist(query) < best_dist2)
     nearestNeighborInternal(far, query, best_pt, best_dist2);
-}
-
-template <typename PointType>
-inline float KDTree<PointType>::coord(const PointType& pt, int axis) const {
-  return axis == 0 ? pt.x : (axis == 1 ? pt.y : pt.z);
-}
-
-template <typename PointType>
-float KDTree<PointType>::sqrDist(const PointType& a, const PointType& b) const {
-  float dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
-  return dx * dx + dy * dy + dz * dz;
 }
 
 template <typename PointType>

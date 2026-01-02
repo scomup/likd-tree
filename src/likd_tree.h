@@ -29,6 +29,7 @@ using PointVector = std::vector<PointType, Eigen::aligned_allocator<PointType>>;
 template <typename PointType>
 class KDTree {
  public:
+
   struct AABB {
     std::array<float, KDTREE_DIM> min, max;
     AABB();
@@ -38,14 +39,14 @@ class KDTree {
   };
 
   struct Node {
-    PointType point;
-    int axis;
     Node* left = nullptr;
     Node* right = nullptr;
     Node* parent = nullptr;
-    bool is_left_child = false;  // true if this is parent's left child
-    int subtree_size = 1;
     AABB aabb;
+    PointType point;
+    int axis;
+    int subtree_size = 1;
+    bool is_left_child = false;  // true if this is parent's left child
     bool need_rebuild = false;
     Node(const PointType& pt, int ax);
     ~Node();
@@ -87,8 +88,13 @@ class KDTree {
   void nearestNeighborInternal(Node* node, const PointType& query,
                                const PointType*& best_pt,
                                float& best_dist2) const;
-  inline float coord(const PointType& pt, int axis) const;
-  float sqrDist(const PointType& a, const PointType& b) const;
+  static inline float coord(const PointType& pt, int axis) {
+    return axis == 0 ? pt.x : (axis == 1 ? pt.y : pt.z);
+  }
+  static inline float sqrDist(const PointType& a, const PointType& b) {
+    float dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+    return dx * dx + dy * dy + dz * dz;
+  }
   bool checkAncestorNeedsRebuild(Node* node) const;
 
   // Background rebuild
