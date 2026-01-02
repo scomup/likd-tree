@@ -97,6 +97,4 @@ cmake --build build
 - [ ] k-nearest neighbors (k-NN) query
 - [ ] box/radius queries
 
-> **Note:** If you need point deletion or downsampling, consider using [ikd-tree](https://github.com/hku-mars/ikd-Tree) instead.
-
-**Made with ❤️ for the robotics community**
+> **Note:** If you require these features immediately, consider using [ikd-tree](https://github.com/hku-mars/ikd-Tree) instead.
