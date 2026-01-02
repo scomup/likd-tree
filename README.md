@@ -66,14 +66,13 @@ tree.nearestNeighbor(queries, results, distances);
 
 ### Prerequisites
 
-- CMake >= 3.10
-- C++17 compiler (GCC 7+, Clang 5+, MSVC 2017+)
-- PCL (Point Cloud Library) - optional but recommended
+- likd-tree itself has no third-party dependencies. 
+- PCL is only required for template instantiation.
 
 ### Build Demo
 
 ```bash
-git clone https://github.com/liu-yangs/kdtree.git
+git clone https://github.com/scomup/likd-tree.git
 cd kdtree
 cmake -B build
 cmake --build build
@@ -83,9 +82,9 @@ cmake --build build
 ### Build Benchmark (Compare with ikd-tree)
 
 ```bash
-git clone https://github.com/liu-yangs/kdtree.git
+git clone https://github.com/scomup/likd-tree.git
 cd kdtree
-git submodule update --init  # Download ikd-tree
+# ikd-tree will be downloaded automatically by CMake
 cmake -B build -DBUILD_BENCHMARK=ON
 cmake --build build
 ./build/benchmark

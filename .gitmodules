@@ -1,0 +1,3 @@
+[submodule "thirdparty/ikd-Tree"]
+	path = thirdparty/ikd-Tree
+	url = https://github.com/hku-mars/ikd-Tree.git

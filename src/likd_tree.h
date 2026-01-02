@@ -1,7 +1,8 @@
-"""
+/*
 Copyright 2026 Liu Yang
 Distributed under MIT license. See LICENSE for more information.
-"""
+*/
+
 
 
 #pragma once

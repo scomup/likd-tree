@@ -34,16 +34,33 @@ option(BUILD_BENCHMARK "Build benchmark comparing likd-tree vs ikd-tree" OFF)
 if(BUILD_BENCHMARK)
   message(STATUS "Building benchmark executable")
   
-  # Initialize ikd-Tree submodule if not already done
+  # Automatically download ikd-Tree if not available
   if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/ikd-Tree/ikd-Tree/ikd_Tree.h")
-    message(STATUS "Initializing ikd-Tree submodule...")
-    execute_process(
-      COMMAND git submodule update --init --recursive
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      RESULT_VARIABLE GIT_SUBMOD_RESULT
-    )
-    if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-      message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}")
+    find_package(Git QUIET)
+    if(GIT_FOUND)
+      message(STATUS "Attempting to initialize ikd-Tree submodule...")
+      execute_process(
+        COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        RESULT_VARIABLE GIT_SUBMOD_RESULT
+        OUTPUT_QUIET
+        ERROR_QUIET
+      )
+    endif()
+    
+    # If submodule init failed or git not available, use FetchContent
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/ikd-Tree/ikd-Tree/ikd_Tree.h")
+      message(STATUS "Submodule not available, downloading ikd-Tree using FetchContent...")
+      include(FetchContent)
+      FetchContent_Declare(
+        ikd-tree
+        GIT_REPOSITORY https://github.com/hku-mars/ikd-Tree.git
+        GIT_TAG main
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/ikd-Tree
+      )
+      FetchContent_MakeAvailable(ikd-tree)
+    else()
+      message(STATUS "ikd-Tree submodule initialized successfully")
     endif()
   endif()
   
