@@ -3,18 +3,30 @@ Copyright 2026 Liu Yang
 Distributed under MIT license. See LICENSE for more information.
 */
 
+// likd-tree: A Lightweight Incremental KD-Tree for dynamic point insertion
+// with automatic background rebalancing. Header-only C++17 library.
+
 #pragma once
 
 #include <Eigen/Core>
 #include <algorithm>
 #include <atomic>
+#include <execution>
 #include <limits>
 #include <mutex>
+#include <numeric>
 #include <optional>
 #include <shared_mutex>
 #include <thread>
 #include <utility>
 #include <vector>
+
+// Execution policy selection: USE_TBB_PARALLEL is set by CMake option
+#ifdef USE_TBB_PARALLEL
+#define LIKD_TREE_PAR std::execution::par
+#else
+#define LIKD_TREE_PAR std::execution::seq
+#endif
 
 constexpr int KDTREE_DIM = 3;
 constexpr double KDTREE_ALPHA = 0.75;
@@ -222,21 +234,23 @@ void KDTree<PointType>::nearestNeighbors(const PointVector<PointType>& queries,
   std::shared_lock<std::shared_mutex> lock(tree_mutex_);
 
   results.resize(queries.size());
-  distances.resize(queries.size());
+  distances.assign(queries.size(), INFINITY);
 
-  // Process each query
-  for (size_t i = 0; i < queries.size(); ++i) {
-    const PointType* best_pt = nullptr;
-    float best_dist2 = INFINITY;
-    nearestNeighborInternal(root_, queries[i], best_pt, best_dist2);
-
-    if (best_pt != nullptr) {
-      results[i] = *best_pt;
-      distances[i] = best_dist2;
-    } else {
-      distances[i] = INFINITY;
-    }
+  // If tree is empty, all queries return INFINITY distance
+  if (root_ == nullptr) {
+    return;
   }
+
+  // Parallel batch queries using C++17 execution policies
+  std::vector<size_t> indices(queries.size());
+  std::iota(indices.begin(), indices.end(), 0);
+
+  std::for_each(LIKD_TREE_PAR, indices.begin(), indices.end(),
+                [&](size_t i) {
+                  const PointType* best_pt = nullptr;
+                  nearestNeighborInternal(root_, queries[i], best_pt, distances[i]);
+                  results[i] = *best_pt;
+                });
 }
 
 template <typename PointType>
@@ -369,20 +383,25 @@ bool KDTree<PointType>::checkAncestorNeedsRebuild(Node* node) const {
 // Background rebuild runs in separate thread
 template <typename PointType>
 void KDTree<PointType>::backgroundRebuild(std::vector<Node*> nodes_to_rebuild) {
-  std::vector<Node*> new_nodes;
-  new_nodes.reserve(nodes_to_rebuild.size());
+  // Pre-allocate new_nodes for thread-safe parallel access
+  std::vector<Node*> new_nodes(nodes_to_rebuild.size());
+  
+  // Create index vector for parallel iteration
+  std::vector<size_t> indices(nodes_to_rebuild.size());
+  std::iota(indices.begin(), indices.end(), 0);
 
-  // rebuild each node which needs rebuild
-  for (const auto& old_node : nodes_to_rebuild) {
-    PointVector<PointType> pts;
-    collect(old_node, pts);
+  // Parallel rebuild of each node (independent subtrees, no dependencies)
+  std::for_each(LIKD_TREE_PAR, indices.begin(), indices.end(),
+                [&](size_t i) {
+                  PointVector<PointType> pts;
+                  collect(nodes_to_rebuild[i], pts);
 
-    Node* new_node = buildRecursive(pts, 0, pts.size(), old_node->axis);
+                  new_nodes[i] = buildRecursive(pts, 0, pts.size(), 
+                                               nodes_to_rebuild[i]->axis);
 
-    new_node->parent = old_node->parent;
-    new_node->is_left_child = old_node->is_left_child;
-    new_nodes.push_back(new_node);
-  }
+                  new_nodes[i]->parent = nodes_to_rebuild[i]->parent;
+                  new_nodes[i]->is_left_child = nodes_to_rebuild[i]->is_left_child;
+                });
 
   // Critical section - swap pointers (brief exclusive lock)
   {

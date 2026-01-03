@@ -17,21 +17,23 @@ Inspired by [ikd-tree](https://github.com/hku-mars/ikd-Tree), `likd-tree` is com
 
 ## 📊 Performance Comparison
 
-Benchmark on 100,000 random 3D points (Intel CPU, -O3 optimization):
+Benchmark on 100K random 3D points (Intel CPU, -O3 optimization, with TBB parallel execution):
 
-### Test1: Batch Build Performance
+### Batch Build Performance
 | Metric | likd-tree | ikd-tree | Speedup |
 |--------|-----------|----------|---------|
-| Build Time | 24.28 ms | 37.92 ms | **1.56x** |
-| Query Time (1000 queries) | 0.97 ms | 1.02 ms | **1.05x** |
+| Build Time | 23.70 ms | 36.70 ms | **1.55x** |
+| Query Time (1000 queries) | 1.23 ms | 1.30 ms | **1.06x** |
 
-### Test2: Incremental Insertion Performance
-(100K points inserted in batches of 1000)
+### Incremental Insertion Performance
+100K points inserted in batches of 1000:
 
 | Metric | likd-tree | ikd-tree | Speedup |
 |--------|-----------|----------|---------|
-| Total Insert Time | 56.82 ms | 138.45 ms | **2.44x** |
-| Total Query Time | 39.22 ms | 62.81 ms | **1.60x** |
+| Total Insert Time | 84.04 ms | 151.82 ms | **1.81x** |
+| Total Query Time | 17.37 ms | 71.38 ms | **4.11x** ⭐ |
+| Avg Query/Batch | 0.17 ms | 0.71 ms | **4.11x** ⭐ |
+
 
 ### Reproduce these results:
 ```bash
