@@ -22,7 +22,6 @@ target_include_directories(kdtree INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Demo executable (always built)
 add_executable(demo 
-src/likd_tree.cpp
 test/demo.cpp
 )
 target_link_libraries(demo kdtree ${PCL_LIBRARIES})
@@ -65,7 +64,6 @@ if(BUILD_BENCHMARK)
   endif()
   
   add_executable(benchmark 
-    src/likd_tree.cpp
     test/benchmark.cpp
     thirdparty/ikd-Tree/ikd-Tree/ikd_Tree.cpp
   )

@@ -12,22 +12,28 @@ Inspired by [ikd-tree](https://github.com/hku-mars/ikd-Tree), `likd-tree` is com
 ## 🚀 Key Features
 
 - **🔄 Incremental**: Dynamic point insertion with automatic background rebalancing
-- **🪶 Lightweight**: ~375 lines of clean, modern C++17 code (vs ikd-tree's ~1700 lines)
-- **⚡ Fast**: 1.7x faster overall than ikd-tree on typical workloads
+- **🪶 Lightweight**: Header-only library (~450 lines of clean C++17) - no build required
+- **⚡ Fast**: 2.44x faster incremental insertion than ikd-tree
 
 ## 📊 Performance Comparison
 
 Benchmark on 100,000 random 3D points (Intel CPU, -O3 optimization):
 
+### Test1: Batch Build Performance
 | Metric | likd-tree | ikd-tree | Speedup |
 |--------|-----------|----------|---------|
-| **Batch Build** | 25.51 ms | 37.90 ms | **1.49x** |
-| **Batch Query (1000)** | 0.98 ms | 0.98 ms | 1.00x |
-| **Incremental Insert** | 66.00 ms | 127.18 ms | **1.93x** |
-| **Concurrent Query** | 42.50 ms | 64.15 ms | **1.51x** |
+| Build Time | 24.28 ms | 37.92 ms | **1.56x** |
+| Query Time (1000 queries) | 0.97 ms | 1.02 ms | **1.05x** |
 
+### Test2: Incremental Insertion Performance
+(100K points inserted in batches of 1000)
 
-### To reproduce these results:
+| Metric | likd-tree | ikd-tree | Speedup |
+|--------|-----------|----------|---------|
+| Total Insert Time | 56.82 ms | 138.45 ms | **2.44x** |
+| Total Query Time | 39.22 ms | 62.81 ms | **1.60x** |
+
+### Reproduce these results:
 ```bash
 cmake -B build -DBUILD_BENCHMARK=ON
 cmake --build build
@@ -36,10 +42,12 @@ cmake --build build
 
 ## 🎯 Quick Start
 
-### Basic Usage
+### Header-Only Usage
+
+Simply include `likd_tree.hpp` in your project - no build or installation needed!
 
 ```cpp
-#include "likd_tree.h"
+#include "likd_tree.hpp"
 #include <pcl/point_types.h>
 
 using PointType = pcl::PointXYZ;
@@ -62,33 +70,29 @@ std::vector<float> distances;
 tree.nearestNeighbors(queries, results, distances);
 ```
 
-## 🛠️ Build Instructions
+## 🛠️ Demo & Benchmark
 
-### Prerequisites
-
-- likd-tree itself has no third-party dependencies. 
-- PCL is only required for template instantiation.
-
-### Build Demo
+### Run Demo
 
 ```bash
 git clone https://github.com/scomup/likd-tree.git
-cd kdtree
+cd likd-tree
 cmake -B build
 cmake --build build
 ./build/demo
 ```
 
-### Build Benchmark (Compare with ikd-tree)
+### Run Benchmark (Compare with ikd-tree)
 
 ```bash
 git clone https://github.com/scomup/likd-tree.git
-cd kdtree
-# ikd-tree will be downloaded automatically by CMake
+cd likd-tree
 cmake -B build -DBUILD_BENCHMARK=ON
 cmake --build build
 ./build/benchmark
 ```
+
+**Note:** Benchmarks and demos require CMake to compile, but the library itself is pure header-only and needs no build step for integration into your project.
 
 ## 📋 TODO
 

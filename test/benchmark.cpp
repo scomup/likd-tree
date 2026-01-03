@@ -7,9 +7,8 @@
 #include <random>
 #include <vector>
 
-#include "../src/likd_tree.h"
+#include "../src/likd_tree.hpp"
 #include "ikd_Tree.h"
-
 
 
 using PointType = pcl::PointXYZ;
