@@ -1,0 +1,27 @@
+# Build and distribution artifacts
+build/
+dist/
+*.egg-info/
+*.pyc
+__pycache__/
+*.so
+*.o
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python environment
+venv/
+env/
+.env
+
+# Test coverage
+.coverage
+htmlcov/
+
+# Build metadata
+*.egg
+.eggs/
