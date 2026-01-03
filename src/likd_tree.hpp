@@ -21,11 +21,10 @@ Distributed under MIT license. See LICENSE for more information.
 #include <utility>
 #include <vector>
 
-// Execution policy selection: USE_TBB_PARALLEL is set by CMake option
-#ifdef USE_TBB_PARALLEL
-#define LIKD_TREE_PAR std::execution::par
+#ifdef LIKD_TREE_USE_TBB
+#define TREE_PAR std::execution::par
 #else
-#define LIKD_TREE_PAR std::execution::seq
+#define TREE_PAR std::execution::seq
 #endif
 
 constexpr int KDTREE_DIM = 3;
@@ -39,7 +38,6 @@ using PointVector = std::vector<PointType, Eigen::aligned_allocator<PointType>>;
 template <typename PointType>
 class KDTree {
  public:
-
   struct AABB {
     std::array<float, KDTREE_DIM> min, max;
     AABB();
@@ -69,10 +67,9 @@ class KDTree {
   void addPoints(const PointVector<PointType>& pts);
   std::pair<const PointType*, float> nearestNeighbors(
       const PointType& query) const;
-  // Batch query API - queries multiple points at once
   void nearestNeighbors(const PointVector<PointType>& queries,
-                            PointVector<PointType>& results,
-                            std::vector<float>& distances) const;
+                        PointVector<PointType>& results,
+                        std::vector<float>& distances) const;
   int size() const;
 
  private:
@@ -107,10 +104,6 @@ class KDTree {
   void backgroundRebuild(std::vector<Node*> nodes_to_rebuild);
   void insertPendingPoints();
 };
-
-// ============================================================================
-// Implementation
-// ============================================================================
 
 // AABB: axis-aligned bounding boxes
 template <typename PointType>
@@ -200,9 +193,7 @@ void KDTree<PointType>::addPoints(const PointVector<PointType>& pts) {
   // Insertion + filtering phase - protected by exclusive lock
   {
     std::unique_lock<std::shared_mutex> lock(tree_mutex_);
-
     std::vector<Node*> rebuild_candidates;
-
     for (const auto& p : pts) {
       Node* renode = nullptr;
       root_ = insertInternal(root_, p, 0, &renode);
@@ -229,8 +220,8 @@ void KDTree<PointType>::addPoints(const PointVector<PointType>& pts) {
 
 template <typename PointType>
 void KDTree<PointType>::nearestNeighbors(const PointVector<PointType>& queries,
-                                        PointVector<PointType>& results,
-                                        std::vector<float>& distances) const {
+                                         PointVector<PointType>& results,
+                                         std::vector<float>& distances) const {
   std::shared_lock<std::shared_mutex> lock(tree_mutex_);
 
   results.resize(queries.size());
@@ -241,16 +232,14 @@ void KDTree<PointType>::nearestNeighbors(const PointVector<PointType>& queries,
     return;
   }
 
-  // Parallel batch queries using C++17 execution policies
   std::vector<size_t> indices(queries.size());
   std::iota(indices.begin(), indices.end(), 0);
 
-  std::for_each(LIKD_TREE_PAR, indices.begin(), indices.end(),
-                [&](size_t i) {
-                  const PointType* best_pt = nullptr;
-                  nearestNeighborInternal(root_, queries[i], best_pt, distances[i]);
-                  results[i] = *best_pt;
-                });
+  std::for_each(TREE_PAR, indices.begin(), indices.end(), [&](size_t i) {
+    const PointType* best_pt = nullptr;
+    nearestNeighborInternal(root_, queries[i], best_pt, distances[i]);
+    results[i] = *best_pt;
+  });
 }
 
 template <typename PointType>
@@ -385,23 +374,21 @@ template <typename PointType>
 void KDTree<PointType>::backgroundRebuild(std::vector<Node*> nodes_to_rebuild) {
   // Pre-allocate new_nodes for thread-safe parallel access
   std::vector<Node*> new_nodes(nodes_to_rebuild.size());
-  
+
   // Create index vector for parallel iteration
   std::vector<size_t> indices(nodes_to_rebuild.size());
   std::iota(indices.begin(), indices.end(), 0);
 
-  // Parallel rebuild of each node (independent subtrees, no dependencies)
-  std::for_each(LIKD_TREE_PAR, indices.begin(), indices.end(),
-                [&](size_t i) {
-                  PointVector<PointType> pts;
-                  collect(nodes_to_rebuild[i], pts);
+  std::for_each(TREE_PAR, indices.begin(), indices.end(), [&](size_t i) {
+    PointVector<PointType> pts;
+    collect(nodes_to_rebuild[i], pts);
 
-                  new_nodes[i] = buildRecursive(pts, 0, pts.size(), 
-                                               nodes_to_rebuild[i]->axis);
+    new_nodes[i] =
+        buildRecursive(pts, 0, pts.size(), nodes_to_rebuild[i]->axis);
 
-                  new_nodes[i]->parent = nodes_to_rebuild[i]->parent;
-                  new_nodes[i]->is_left_child = nodes_to_rebuild[i]->is_left_child;
-                });
+    new_nodes[i]->parent = nodes_to_rebuild[i]->parent;
+    new_nodes[i]->is_left_child = nodes_to_rebuild[i]->is_left_child;
+  });
 
   // Critical section - swap pointers (brief exclusive lock)
   {

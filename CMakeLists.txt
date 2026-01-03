@@ -7,22 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
-# Option to enable TBB for parallel execution
-option(USE_TBB_PARALLEL "Enable TBB for parallel execution in batch queries and background rebuild" ON)
-
-# Find TBB for parallel execution policy support
+# Find TBB for optional parallel execution support
 find_package(TBB QUIET)
-if(TBB_FOUND AND USE_TBB_PARALLEL)
+if(TBB_FOUND)
 	message(STATUS "Found TBB: ${TBB_VERSION}")
-	message(STATUS "TBB parallel execution is ENABLED")
-	set(LIKD_TREE_USE_TBB ON)
-elseif(TBB_FOUND AND NOT USE_TBB_PARALLEL)
-	message(STATUS "Found TBB: ${TBB_VERSION}")
-	message(STATUS "TBB parallel execution is DISABLED (set USE_TBB_PARALLEL=ON to enable)")
-	set(LIKD_TREE_USE_TBB OFF)
+	message(STATUS "You can use #define LIKD_TREE_USE_TBB in your code to enable parallel execution")
 else()
-	message(STATUS "TBB not found. Parallel execution policies will use sequential execution.")
-	set(LIKD_TREE_USE_TBB OFF)
+	message(STATUS "TBB not found. If you want to use #define LIKD_TREE_USE_TBB, please install TBB.")
 endif()
 
 find_package(PCL QUIET COMPONENTS common io)
@@ -37,9 +28,8 @@ endif()
 
 add_library(kdtree INTERFACE)
 target_include_directories(kdtree INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-if(LIKD_TREE_USE_TBB)
+if(TBB_FOUND)
   target_link_libraries(kdtree INTERFACE TBB::tbb)
-  target_compile_definitions(kdtree INTERFACE USE_TBB_PARALLEL)
 endif()
 
 # Demo executable (always built)

@@ -48,8 +48,10 @@ cmake --build build
 Simply include `likd_tree.hpp` in your project - no build or installation needed!
 
 ```cpp
-#include "likd_tree.hpp"
 #include <pcl/point_types.h>
+// Define LIKD_TREE_USE_TBB BEFORE including the header to enable TBB parallel acceleration
+#define LIKD_TREE_USE_TBB
+#include "likd_tree.hpp"
 
 using PointType = pcl::PointXYZ;
 
@@ -70,6 +72,13 @@ PointVector<PointType> results;
 std::vector<float> distances;
 tree.nearestNeighbors(queries, results, distances);
 ```
+
+**To enable TBB parallel acceleration:**
+- Add `#define LIKD_TREE_USE_TBB` before including `likd_tree.hpp`
+- Link against TBB library in your build system (CMakeLists.txt or build script)
+
+**To disable TBB (sequential execution):**
+- Simply don't define `LIKD_TREE_USE_TBB`, or comment it out
 
 ## 🛠️ Demo & Benchmark
 

@@ -1,5 +1,9 @@
 // test_kdtree.cpp
 // likd-tree vs ikd-tree benchmark
+
+// Enable TBB parallel execution (define before including likd_tree.hpp)
+#define LIKD_TREE_USE_TBB
+
 #include <pcl/point_types.h>
 
 #include <chrono>
