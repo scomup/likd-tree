@@ -8,9 +8,10 @@
 
 `likd-tree` is a lightweight incremental KD-tree designed for dynamic point insertion without requiring full tree reconstruction.
 
+## C++ Version
 Inspired by [ikd-tree](https://github.com/hku-mars/ikd-Tree), `likd-tree` is completely reimplemented using modern C++17 and features a more intelligent and principled rebuild strategy, which significantly improves efficiency while keeping the structure lightweight and easy to maintain.
 
-## 🐍 Python Version
+## Python Version
 
 **The python version likd-tree is also available now!🎉** 
 
