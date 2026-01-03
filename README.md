@@ -30,9 +30,8 @@ Benchmark on 100K random 3D points (Intel CPU, -O3 optimization, with TBB parall
 
 | Metric | likd-tree | ikd-tree | Speedup |
 |--------|-----------|----------|---------|
-| Total Insert Time | 84.04 ms | 151.82 ms | **1.81x** |
-| Total Query Time | 17.37 ms | 71.38 ms | **4.11x** ⭐ |
-| Avg Query/Batch | 0.17 ms | 0.71 ms | **4.11x** ⭐ |
+| Total Insert Time | 84.04 ms | 151.82 ms | **1.81x**⭐ |
+| Total Query Time | 17.37 ms | 71.38 ms | **4.11x**⭐  |
 
 
 ### Reproduce these results:
