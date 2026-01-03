@@ -27,7 +27,7 @@ Basic usage:
 For more information, see: https://github.com/scomup/likd-tree
 """
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 __author__ = 'Liu Yang'
 __license__ = 'MIT'
 

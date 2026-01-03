@@ -3,7 +3,6 @@
 **A Lightweight Incremental KD-Tree for Robotic Applications**
 
 [![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.cppreference.com/w/cpp/17)
-[![PyPI version](https://img.shields.io/pypi/v/likd-tree.svg)](https://pypi.org/project/likd-tree/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 `likd-tree` is a lightweight incremental KD-tree designed for dynamic point insertion without requiring full tree reconstruction.

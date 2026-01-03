@@ -7,7 +7,7 @@ Distributed under MIT license. See LICENSE for more information.
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <cmath>
-#include "../src/likd_tree.hpp"
+#include "likd_tree.hpp"
 
 namespace py = pybind11;
 

@@ -45,13 +45,23 @@ if not eigen_include:
 
 print(f"Found Eigen3 at: {eigen_include}")
 
+# Get the source directory - works both when called from python/ dir and when installed from sdist
+# In sdist, src/ is at the same level as python files in likd_tree-1.0.0/src/
+src_dir = Path(__file__).parent / 'src'
+if not src_dir.exists():
+    # Try parent directory (when called from python/ in repo)
+    src_dir = Path(__file__).parent.parent / 'src'
+
+print(f"Source directory: {src_dir}")
+print(f"likd_tree.hpp exists: {(src_dir / 'likd_tree.hpp').exists()}")
+
 ext_modules = [
     Extension(
         'likd_tree',
         ['likd_tree_py.cpp'],
         include_dirs=[
             get_pybind_include(),
-            str(Path(__file__).parent.parent / 'src'),
+            str(src_dir),
             eigen_include,
         ],
         language='c++',
@@ -67,14 +77,26 @@ class build_ext_fixed(build_ext):
         # This will be set correctly when building wheels
 
 
-# Read README from parent directory
-readme_path = Path(__file__).parent.parent / 'README.md'
-with open(readme_path, 'r', encoding='utf-8') as fh:
-    long_description = fh.read()
+# Read README from parent directory or current directory
+readme_paths = [
+    Path(__file__).parent.parent / 'README.md',  # When called from python/ directory
+    Path(__file__).parent / 'README.md',          # When installed from sdist
+]
+
+long_description = "A Lightweight Incremental KD-Tree for dynamic point insertion"
+for readme_path in readme_paths:
+    if readme_path.exists():
+        try:
+            with open(readme_path, 'r', encoding='utf-8') as fh:
+                long_description = fh.read()
+            print(f"Using README from: {readme_path}")
+            break
+        except Exception as e:
+            print(f"Warning: Could not read {readme_path}: {e}")
 
 setup(
     name='likd-tree',
-    version='1.0.0',
+    version='1.0.1',
     author='Liu Yang',
     author_email='',
     description='A Lightweight Incremental KD-Tree for dynamic point insertion',
