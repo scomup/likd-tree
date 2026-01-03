@@ -9,32 +9,27 @@ Distributed under MIT license. See LICENSE for more information.
 #pragma once
 
 #include <Eigen/Core>
-#include <algorithm>
 #include <atomic>
 #include <execution>
 #include <limits>
 #include <mutex>
-#include <numeric>
 #include <optional>
 #include <shared_mutex>
 #include <thread>
-#include <utility>
 #include <vector>
 
+constexpr int KDTREE_DIM = 3;
+constexpr double KDTREE_ALPHA = 0.75;
+constexpr int INSERTION_BATCH_SIZE = 100;
+constexpr int MIN_SUB_NUM = 8;
 #ifdef LIKD_TREE_USE_TBB
 #define TREE_PAR std::execution::par
 #else
 #define TREE_PAR std::execution::seq
 #endif
 
-constexpr int KDTREE_DIM = 3;
-constexpr double KDTREE_ALPHA = 0.75;
-constexpr int INSERTION_BATCH_SIZE = 100;
-constexpr int MIN_SUB_NUM = 8;
-
 template <typename PointType>
 using PointVector = std::vector<PointType, Eigen::aligned_allocator<PointType>>;
-
 template <typename PointType>
 class KDTree {
  public:
@@ -73,14 +68,13 @@ class KDTree {
   int size() const;
 
  private:
-  Node* root_ = nullptr;
-  mutable std::shared_mutex tree_mutex_;  // Protects tree structure
-  std::atomic<bool> rebuilding_{false};
-
-  // Pending points buffer during rebuild
-  PointVector<PointType> pending_points_;
-  std::mutex pending_mutex_;
-
+   static inline float coord(const PointType& pt, int axis) {
+    return axis == 0 ? pt.x : (axis == 1 ? pt.y : pt.z);
+  }
+  static inline float sqrDist(const PointType& a, const PointType& b) {
+    float dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+    return dx * dx + dy * dy + dz * dz;
+  }
   Node* insertInternal(Node* node, const PointType& pt, int depth,
                        std::optional<Node**> renode);
   void update(Node* node);
@@ -91,18 +85,16 @@ class KDTree {
   void nearestNeighborInternal(Node* node, const PointType& query,
                                const PointType*& best_pt,
                                float& best_dist2) const;
-  static inline float coord(const PointType& pt, int axis) {
-    return axis == 0 ? pt.x : (axis == 1 ? pt.y : pt.z);
-  }
-  static inline float sqrDist(const PointType& a, const PointType& b) {
-    float dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
-    return dx * dx + dy * dy + dz * dz;
-  }
   bool checkAncestorNeedsRebuild(Node* node) const;
-
-  // Background rebuild
   void backgroundRebuild(std::vector<Node*> nodes_to_rebuild);
   void insertPendingPoints();
+
+  Node* root_ = nullptr;
+  mutable std::shared_mutex tree_mutex_;
+  std::atomic<bool> rebuilding_{false};
+  PointVector<PointType> pending_points_;
+  std::mutex pending_mutex_;
+
 };
 
 // AABB: axis-aligned bounding boxes
@@ -237,7 +229,9 @@ void KDTree<PointType>::nearestNeighbors(const PointVector<PointType>& queries,
 
   std::for_each(TREE_PAR, indices.begin(), indices.end(), [&](size_t i) {
     const PointType* best_pt = nullptr;
-    nearestNeighborInternal(root_, queries[i], best_pt, distances[i]);
+    float best_dist2 = INFINITY;
+    nearestNeighborInternal(root_, queries[i], best_pt, best_dist2);
+    distances[i] = std::sqrt(best_dist2);
     results[i] = *best_pt;
   });
 }
