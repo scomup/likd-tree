@@ -24,14 +24,6 @@ using PointType = Point;
 PYBIND11_MODULE(likd_tree, m) {
     m.doc() = "likd-tree: A Lightweight Incremental KD-Tree for dynamic point insertion";
 
-    // Bind Point struct
-    py::class_<PointType>(m, "Point")
-        .def(py::init<>())
-        .def(py::init<float, float, float>())
-        .def_readwrite("x", &PointType::x)
-        .def_readwrite("y", &PointType::y)
-        .def_readwrite("z", &PointType::z);
-
     // Bind KDTree class
     py::class_<KDTree<PointType>>(m, "KDTree")
         .def(py::init<>())

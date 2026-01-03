@@ -9,6 +9,24 @@
 
 Inspired by [ikd-tree](https://github.com/hku-mars/ikd-Tree), `likd-tree` is completely reimplemented using modern C++17 and features a more intelligent and principled rebuild strategy, which significantly improves efficiency while keeping the structure lightweight and easy to maintain.
 
+## 🐍 Python Version
+
+**The python version likd-tree is also available now!🎉** 
+
+This is the **first Python KDTree library with incremental insert** (as far as I know). Install via PyPI:
+```bash
+pip install likd-tree
+```
+
+**Key features:**
+- scipy-compatible API
+- Direct NumPy array support
+- Dynamic point insertion
+- 5.6x faster single query latency than scipy.spatial.cKDTree
+
+For details see [python/README.md](python/README.md)
+
+
 ## 🚀 Key Features
 
 - **🔄 Incremental**: Dynamic point insertion with automatic background rebalancing
@@ -43,7 +61,7 @@ cmake --build build
 
 ## 🎯 Quick Start
 
-### Header-Only Usage
+### C++ Header-Only Usage
 
 Simply include `likd_tree.hpp` in your project - no build or installation needed!
 
@@ -79,6 +97,29 @@ tree.nearestNeighbors(queries, results, distances);
 
 **To disable TBB (sequential execution):**
 - Simply don't define `LIKD_TREE_USE_TBB`, or comment it out
+
+
+### Python Usage
+
+```python
+import numpy as np
+from likd_tree import KDTree
+
+# Create and build tree
+points = np.random.rand(10000, 3).astype(np.float32)
+tree = KDTree()
+tree.build(points)
+
+# Query nearest neighbors
+queries = np.random.rand(100, 3).astype(np.float32)
+distances, indices = tree.nearest_neighbors(queries)
+
+# Add more points incrementally
+new_points = np.random.rand(1000, 3).astype(np.float32)
+tree.add_points(new_points)
+
+print(f"Tree size: {tree.size()}")
+```
 
 ## 🛠️ Demo & Benchmark
 

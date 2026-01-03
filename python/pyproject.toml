@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "pybind11>=2.6.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "likd-tree"
+version = "1.0.0"
+description = "A Lightweight Incremental KD-Tree for dynamic point insertion"
+readme = "README.md"
+requires-python = ">=3.6"
+license = {text = "MIT"}
+authors = [
+    {name = "Liu Yang"}
+]
+keywords = ["kd-tree", "kdtree", "spatial-index", "nearest-neighbor", "point-cloud"]
+dependencies = [
+    "pybind11>=2.6.0",
+    "numpy>=1.19.0",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: C++",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+[project.urls]
+Homepage = "https://github.com/scomup/likd-tree"
+Documentation = "https://github.com/scomup/likd-tree#readme"
+Repository = "https://github.com/scomup/likd-tree.git"
+"Bug Tracker" = "https://github.com/scomup/likd-tree/issues"
+
+[project.optional-dependencies]
+dev = ["pytest>=6.0", "numpy>=1.19.0"]
+bench = ["scipy>=1.5.0", "numpy>=1.19.0"]
