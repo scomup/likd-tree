@@ -19,15 +19,7 @@ This is the **first Python KDTree library with incremental insert** (as far as I
 ```bash
 pip install likd-tree
 ```
-
-**Key features:**
-- scipy-compatible API
-- Direct NumPy array support
-- Dynamic point insertion
-- 5.6x faster single query latency than scipy.spatial.cKDTree
-
-For details see [python/README.md](python/README.md)
-
+For details see [Python Usage](#Python Usage)
 
 ## 🚀 Key Features
 
@@ -102,6 +94,13 @@ tree.nearestNeighbors(queries, results, distances);
 
 
 ### Python Usage
+
+Install via PyPI:
+```bash
+pip install likd_tree
+```
+
+Usage:
 
 ```python
 import numpy as np
