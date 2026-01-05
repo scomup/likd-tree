@@ -26,6 +26,7 @@ For details see [Python Usage](#python-usage)
 - **🔄 Incremental**: Dynamic point insertion with automatic background rebalancing
 - **🪶 Lightweight**: Header-only library (~450 lines of clean C++17) - no build required
 - **⚡ Fast**: 2.44x faster incremental insertion than ikd-tree
+- **🧠 Intelligent**: Smarter rebuild strategy with delayed and batched rebuilding of multiple non-overlapping unbalanced subtrees *(paper-worthy?)* 
 
 ## 📊 Performance Comparison
 
