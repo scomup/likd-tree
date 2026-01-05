@@ -117,6 +117,31 @@ PYBIND11_MODULE(likd_tree, m) {
         .def("size", &KDTree<PointType>::size)
         
         .def("wait_for_rebuild", &KDTree<PointType>::waitForRebuild);
+
+    // Build a snapshot by traversing the tree returned from getTree()
+    m.def("get_tree_snapshot", [](const KDTree<PointType>& tree) {
+        const auto* root = tree.getTree();
+        py::list out;
+        if (!root) return out;
+
+        std::vector<const KDTree<PointType>::Node*> stack;
+        stack.push_back(root);
+        while (!stack.empty()) {
+            const auto* n = stack.back(); stack.pop_back();
+            py::dict d;
+            d["idx"] = n->point.idx;
+            d["parent"] = n->parent ? n->parent->point.idx : -1;
+            d["left"] = n->left ? n->left->point.idx : -1;
+            d["right"] = n->right ? n->right->point.idx : -1;
+            d["x"] = n->point.x;
+            d["y"] = n->point.y;
+            d["z"] = n->point.z;
+            out.append(d);
+            if (n->left) stack.push_back(n->left);
+            if (n->right) stack.push_back(n->right);
+        }
+        return out;
+    });
 }
 
 

@@ -67,6 +67,7 @@ class KDTree {
                         std::vector<float>& distances) const;
   int size() const;
   void waitForRebuild() const;  // Wait for any pending rebuild to complete
+  const Node* getTree() const;
 
  private:
    static inline float coord(const PointType& pt, int axis) {
@@ -247,6 +248,11 @@ void KDTree<PointType>::waitForRebuild() const {
   while (rebuilding_.load()) {
     std::this_thread::yield();
   }
+}
+
+template <typename PointType>
+typename KDTree<PointType>::Node const* KDTree<PointType>::getTree() const {
+  return root_;
 }
 
 template <typename PointType>

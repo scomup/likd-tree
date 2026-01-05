@@ -20,7 +20,7 @@ Distributed under MIT license. See LICENSE for more information.
 constexpr int KDTREE_DIM = 3;
 constexpr double KDTREE_ALPHA = 0.75;
 constexpr int INSERTION_BATCH_SIZE = 100;
-constexpr int MIN_SUB_NUM = 8;
+constexpr int MIN_SUB_NUM = 0;
 #ifdef LIKD_TREE_USE_TBB
 #define TREE_PAR std::execution::par
 #else
@@ -66,6 +66,7 @@ class KDTree {
                         std::vector<float>& distances) const;
   int size() const;
   void waitForRebuild() const;  // Wait for rebuild, not needed for normal use (only for inmidiate requery newly inserted points)
+  const Node* getTree() const;
 
  private:
    static inline float coord(const PointType& pt, int axis) {
@@ -246,6 +247,11 @@ void KDTree<PointType>::waitForRebuild() const {
   while (rebuilding_.load()) {
     std::this_thread::yield();
   }
+}
+
+template <typename PointType>
+typename KDTree<PointType>::Node const* KDTree<PointType>::getTree() const {
+  return root_;
 }
 
 template <typename PointType>
