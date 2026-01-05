@@ -62,6 +62,7 @@ PYBIND11_MODULE(likd_tree, m) {
                  points.reserve(buf.shape[0]);
                  
                  int base_idx = tree.size();
+                 printf("Base index for new points: %d\n", base_idx);
                  for (size_t i = 0; i < buf.shape[0]; ++i) {
                      PointType p(ptr[i * 3], ptr[i * 3 + 1], ptr[i * 3 + 2]);
                      p.idx = base_idx + i;

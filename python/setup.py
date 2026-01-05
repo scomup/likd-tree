@@ -23,28 +23,6 @@ class get_pybind_include:
         return pybind11.get_include()
 
 
-def find_eigen_include():
-
-    result = subprocess.run(['pkg-config', '--cflags-only-I', 'eigen3'], 
-                          capture_output=True, text=True, check=False)
-    if result.returncode == 0:
-        path = result.stdout.strip().replace('-I', '')
-        if path and Path(path).exists():
-            return path
-    return None
-
-
-# Find Eigen
-eigen_include = find_eigen_include()
-
-if not eigen_include:
-    print("\n" + "="*70)
-    print("ERROR: Could not find Eigen3 headers!")
-    print("="*70 + "\n")
-    sys.exit(1)
-
-print(f"Found Eigen3 at: {eigen_include}")
-
 # Get the source directory - works both when called from python/ dir and when installed from sdist
 # In sdist, src/ is at the same level as python files in likd_tree-1.0.0/src/
 src_dir = Path(__file__).parent / 'src'
@@ -62,7 +40,6 @@ ext_modules = [
         include_dirs=[
             get_pybind_include(),
             str(src_dir),
-            eigen_include,
         ],
         language='c++',
         extra_compile_args=['-std=c++17', '-O3'],

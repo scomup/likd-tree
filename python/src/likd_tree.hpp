@@ -8,7 +8,6 @@ Distributed under MIT license. See LICENSE for more information.
 
 #pragma once
 
-#include <Eigen/Core>
 #include <atomic>
 #include <execution>
 #include <limits>
@@ -29,7 +28,7 @@ constexpr int MIN_SUB_NUM = 8;
 #endif
 
 template <typename PointType>
-using PointVector = std::vector<PointType, Eigen::aligned_allocator<PointType>>;
+using PointVector = std::vector<PointType>;
 template <typename PointType>
 class KDTree {
  public:

@@ -9,10 +9,7 @@ import os
 import time
 import numpy as np
 
-# Add build directory to path to find likd_tree module
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'build'))
-
-import likd_tree
+from likd_tree import KDTree as LIKDTree
 from scipy.spatial import cKDTree
 from scipy.spatial import KDTree
 
@@ -24,8 +21,8 @@ def benchmark_batch_build():
     points = np.random.randn(n_points, 3).astype(np.float32)
     
     t0 = time.time()
-    likd_tree_obj = likd_tree.KDTree()
-    likd_tree_obj.build(points)
+    likd_tree = LIKDTree()
+    likd_tree.build(points)
     likd_build_time = (time.time() - t0) * 1000
     
     t0 = time.time()
@@ -41,7 +38,7 @@ def benchmark_batch_build():
     queries = np.random.randn(n_queries, 3).astype(np.float32)
         
     t0 = time.time()
-    d_likd, idx_likd = likd_tree_obj.nearest_neighbors(queries)
+    d_likd, idx_likd = likd_tree.nearest_neighbors(queries)
     likd_query_time = (time.time() - t0) * 1000
     
     t0 = time.time()
@@ -68,9 +65,42 @@ def benchmark_batch_build():
     print(f"{'Query Time (ms)':<20} {likd_query_time:<20.2f}", end='')
     print(f"{ckdtree_query_time:<20.2f}{kdtree_query_time:<20.2f}")
     
+
+def benchmark_incremental_build():
+    n_points = 11
+    np.random.seed(42)
+    points = np.random.randn(n_points, 3).astype(np.float32)
+
+    # Batch query test
+    n_queries = n_points
+    queries = np.random.randn(n_queries, 3).astype(np.float32)
+
+
+    likd_tree = LIKDTree()
+    likd_tree.build(points)
+    batch = 2
+    for i in range(0, n_points, batch):
+        if i == 0:
+            likd_tree.build(points[i:i+batch])
+        else:
+            likd_tree.add_points(points[i:i+batch])
+
+    ckdtree = cKDTree(points)
+    d_ckdtree, idx_ckdtree = ckdtree.query(queries)
+    d_likd, idx_likd = likd_tree.nearest_neighbors(queries)
+
+    # Verify correctness
+    if not np.allclose(d_likd, d_ckdtree) or not np.all(idx_likd == idx_ckdtree):
+        print("❌ Mismatch found between likd-tree and cKDTree results in incremental build!")
+    else:
+        print("✅ likd-tree and cKDTree results match in incremental build.")
+
+
+
+
 def main():
-    benchmark_batch_build()
-    print("cKDTree and KDTree not supported for incremental insertion benchmark.")
+    # benchmark_batch_build()
+    benchmark_incremental_build()
 
 if __name__ == "__main__":
     main()
