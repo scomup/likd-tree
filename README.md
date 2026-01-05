@@ -19,7 +19,7 @@ This is the **first Python KDTree library with incremental insert** (as far as I
 ```bash
 pip install likd-tree
 ```
-For details see [Python Usage](#Python Usage)
+For details see [Python Usage](#python-usage)
 
 ## 🚀 Key Features
 
