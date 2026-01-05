@@ -6,10 +6,10 @@
 [![PyPI version](https://img.shields.io/pypi/v/likd-tree.svg)](https://pypi.org/project/likd-tree/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-`likd-tree` is a lightweight incremental KD-tree designed for dynamic point insertion with automatic rebuilding.
+`likd-tree` is a lightweight incremental KD-tree designed for dynamic point insertion with automatic rebalancing.
 
 ## C++ Version
-Inspired by [ikd-tree](https://github.com/hku-mars/ikd-Tree), `likd-tree` is completely reimplemented using modern C++17 and features a more intelligent and principled rebuild strategy, which significantly improves efficiency while keeping the structure lightweight and easy to maintain.
+Inspired by [ikd-tree](https://github.com/hku-mars/ikd-Tree), `likd-tree` is completely reimplemented using modern C++17 and features a more intelligent and principled rebalance strategy, which significantly improves efficiency while keeping the structure lightweight and easy to maintain.
 
 ## Python Version
 
@@ -26,7 +26,7 @@ For details see [Python Usage](#python-usage)
 - **🔄 Incremental**: Dynamic point insertion with automatic background rebalancing
 - **🪶 Lightweight**: Header-only library (~450 lines of clean C++17) - no build required
 - **⚡ Fast**: 2.44x faster incremental insertion than ikd-tree
-- **🧠 Intelligent**: Smarter rebuild strategy with delayed and batched rebuilding of multiple non-overlapping unbalanced subtrees *(paper-worthy?)* 
+- **🧠 Intelligent**: Smarter rebalance strategy with delayed and batched rebuilding of multiple non-overlapping unbalanced subtrees *(paper-worthy?)* 
 
 ## 📊 Performance Comparison
 
@@ -147,7 +147,10 @@ cmake --build build
 
 ### Rebuild visualization demo
 
-![img](imgs/rebuild.gif)
+**Incremental add points without rebalance**
+![no-rebuild](imgs/no-rebuild.gif)
+**Incremental add points with automatic rebalance**
+![rebuild](imgs/rebuild.gif)
 
 **Note:** Benchmarks and demos require CMake to compile, but the library itself is pure header-only and needs no build step for integration into your project.
 
