@@ -145,6 +145,10 @@ cmake --build build
 ./build/benchmark
 ```
 
+### Rebuild visualization demo
+
+![img](imgs/rebuild.gif)
+
 **Note:** Benchmarks and demos require CMake to compile, but the library itself is pure header-only and needs no build step for integration into your project.
 
 ## 📋 TODO
