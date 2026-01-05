@@ -21,6 +21,9 @@ struct Point {
 
 using PointType = Point;
 
+// Global point index counter
+int g_next_point_idx = 0;
+
 PYBIND11_MODULE(likd_tree, m) {
     m.doc() = "likd-tree: A Lightweight Incremental KD-Tree for dynamic point insertion";
 
@@ -30,6 +33,7 @@ PYBIND11_MODULE(likd_tree, m) {
         
         .def("build", 
              [](KDTree<PointType>& tree, py::object points_obj) {
+                 g_next_point_idx = 0;  // Reset counter at start of build
                  auto points_array = py::array_t<float>::ensure(points_obj);
                  auto buf = points_array.request();
                  if (buf.ndim != 2 || buf.shape[1] != 3) {
@@ -42,7 +46,7 @@ PYBIND11_MODULE(likd_tree, m) {
                  
                  for (size_t i = 0; i < buf.shape[0]; ++i) {
                      PointType p(ptr[i * 3], ptr[i * 3 + 1], ptr[i * 3 + 2]);
-                     p.idx = i;
+                     p.idx = g_next_point_idx++;
                      points.push_back(p);
                  }
                  tree.build(points);
@@ -61,11 +65,9 @@ PYBIND11_MODULE(likd_tree, m) {
                  PointVector<PointType> points;
                  points.reserve(buf.shape[0]);
                  
-                 int base_idx = tree.size();
-                 printf("Base index for new points: %d\n", base_idx);
                  for (size_t i = 0; i < buf.shape[0]; ++i) {
                      PointType p(ptr[i * 3], ptr[i * 3 + 1], ptr[i * 3 + 2]);
-                     p.idx = base_idx + i;
+                     p.idx = g_next_point_idx++;
                      points.push_back(p);
                  }
                  tree.addPoints(points);
@@ -112,7 +114,9 @@ PYBIND11_MODULE(likd_tree, m) {
              },
              "x")
         
-        .def("size", &KDTree<PointType>::size);
+        .def("size", &KDTree<PointType>::size)
+        
+        .def("wait_for_rebuild", &KDTree<PointType>::waitForRebuild);
 }
 
 

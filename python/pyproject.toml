@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "likd-tree"
-version = "1.0.1"
+version = "1.0.2"
 description = "A Lightweight Incremental KD-Tree for dynamic point insertion"
 readme = "README.md"
 requires-python = ">=3.6"
@@ -41,5 +41,5 @@ Repository = "https://github.com/scomup/likd-tree.git"
 "Bug Tracker" = "https://github.com/scomup/likd-tree/issues"
 
 [project.optional-dependencies]
-dev = ["pytest>=6.0", "numpy>=1.19.0"]
-bench = ["scipy>=1.5.0", "numpy>=1.19.0"]
+dev = ["numpy>=1.19.0"]
+bench = ["numpy>=1.19.0"]

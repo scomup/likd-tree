@@ -73,7 +73,7 @@ for readme_path in readme_paths:
 
 setup(
     name='likd-tree',
-    version='1.0.1',
+    version='1.0.2',
     author='Liu Yang',
     author_email='',
     description='A Lightweight Incremental KD-Tree for dynamic point insertion',

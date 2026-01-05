@@ -66,6 +66,7 @@ class KDTree {
                         PointVector<PointType>& results,
                         std::vector<float>& distances) const;
   int size() const;
+  void waitForRebuild() const;  // Wait for any pending rebuild to complete
 
  private:
    static inline float coord(const PointType& pt, int axis) {
@@ -239,6 +240,13 @@ void KDTree<PointType>::nearestNeighbors(const PointVector<PointType>& queries,
 template <typename PointType>
 int KDTree<PointType>::size() const {
   return root_ ? root_->subtree_size : 0;
+}
+
+template <typename PointType>
+void KDTree<PointType>::waitForRebuild() const {
+  while (rebuilding_.load()) {
+    std::this_thread::yield();
+  }
 }
 
 template <typename PointType>

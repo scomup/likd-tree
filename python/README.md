@@ -3,13 +3,15 @@
 **A Lightweight Incremental KD-Tree for Robotic Applications**
 
 [![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.cppreference.com/w/cpp/17)
+[![PyPI version](https://img.shields.io/pypi/v/likd-tree.svg)](https://pypi.org/project/likd-tree/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 `likd-tree` is a lightweight incremental KD-tree designed for dynamic point insertion without requiring full tree reconstruction.
 
+## C++ Version
 Inspired by [ikd-tree](https://github.com/hku-mars/ikd-Tree), `likd-tree` is completely reimplemented using modern C++17 and features a more intelligent and principled rebuild strategy, which significantly improves efficiency while keeping the structure lightweight and easy to maintain.
 
-## 🐍 Python Version
+## Python Version
 
 **The python version likd-tree is also available now!🎉** 
 
@@ -17,15 +19,7 @@ This is the **first Python KDTree library with incremental insert** (as far as I
 ```bash
 pip install likd-tree
 ```
-
-**Key features:**
-- scipy-compatible API
-- Direct NumPy array support
-- Dynamic point insertion
-- 5.6x faster single query latency than scipy.spatial.cKDTree
-
-For details see [python/README.md](python/README.md)
-
+For details see [Python Usage](#python-usage)
 
 ## 🚀 Key Features
 
@@ -100,6 +94,13 @@ tree.nearestNeighbors(queries, results, distances);
 
 
 ### Python Usage
+
+Install via PyPI:
+```bash
+pip install likd_tree
+```
+
+Usage:
 
 ```python
 import numpy as np
