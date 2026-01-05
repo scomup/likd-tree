@@ -6,7 +6,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/likd-tree.svg)](https://pypi.org/project/likd-tree/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-`likd-tree` is a lightweight incremental KD-tree designed for dynamic point insertion without requiring full tree reconstruction.
+`likd-tree` is a lightweight incremental KD-tree designed for dynamic point insertion with automatic rebuilding.
 
 ## C++ Version
 Inspired by [ikd-tree](https://github.com/hku-mars/ikd-Tree), `likd-tree` is completely reimplemented using modern C++17 and features a more intelligent and principled rebuild strategy, which significantly improves efficiency while keeping the structure lightweight and easy to maintain.
@@ -15,7 +15,7 @@ Inspired by [ikd-tree](https://github.com/hku-mars/ikd-Tree), `likd-tree` is com
 
 **The python version likd-tree is also available now!🎉** 
 
-This is the **first Python KDTree library with incremental insert** (as far as I know). Install via PyPI:
+To the best of our knowledge, this is the **first Python KD-tree library that supports incremental insertion with automatic rebuilding**. Install it via PyPI:
 ```bash
 pip install likd-tree
 ```
