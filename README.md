@@ -6,16 +6,16 @@
 [![PyPI version](https://img.shields.io/pypi/v/likd-tree.svg)](https://pypi.org/project/likd-tree/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-`likd-tree` is a lightweight incremental KD-tree designed for dynamic point insertion without requiring full tree reconstruction.
+`likd-tree` is a lightweight incremental KD-tree designed for dynamic point insertion with automatic rebalancing.
 
 ## C++ Version
-Inspired by [ikd-tree](https://github.com/hku-mars/ikd-Tree), `likd-tree` is completely reimplemented using modern C++17 and features a more intelligent and principled rebuild strategy, which significantly improves efficiency while keeping the structure lightweight and easy to maintain.
+Inspired by [ikd-tree](https://github.com/hku-mars/ikd-Tree), `likd-tree` is completely reimplemented using modern C++17 and features a more intelligent and principled rebalance strategy, which significantly improves efficiency while keeping the structure lightweight and easy to maintain.
 
 ## Python Version
 
 **The python version likd-tree is also available now!🎉** 
 
-This is the **first Python KDTree library with incremental insert** (as far as I know). Install via PyPI:
+To the best of our knowledge, this is the **first Python KD-tree library that supports incremental insertion with automatic rebuilding**. Install it via PyPI:
 ```bash
 pip install likd-tree
 ```
@@ -26,7 +26,8 @@ For details see [Python Usage](#python-usage)
 - **🔄 Incremental**: Dynamic point insertion with automatic background rebalancing
 - **🪶 Lightweight**: Header-only library (~450 lines of clean C++17) - no build required
 - **⚡ Fast**: 2.44x faster incremental insertion than ikd-tree
-- **🧠 Intelligent**: Smarter rebuild strategy with delayed and batched rebuilding of multiple non-overlapping unbalanced subtrees *(paper-worthy?)* 
+- **🧠 Intelligent**: Smarter rebalance strategy with delayed and batched rebuilding of multiple non-overlapping unbalanced subtrees *(paper-worthy?)* 
+- **🔧 Flexible**: Support for custom point types via PointTraits template - use any point representation (arrays, getters, etc.)
 
 ## 📊 Performance Comparison
 
@@ -93,6 +94,38 @@ tree.nearestNeighbors(queries, results, distances);
 **To disable TBB (sequential execution):**
 - Simply don't define `LIKD_TREE_USE_TBB`, or comment it out
 
+### Custom Point Types
+
+likd-tree supports arbitrary point types through the `PointTraits` template. By default, it works with point types that have `x`, `y`, `z` members, but you can easily customize it:
+
+```cpp
+// Your custom point type using an array
+struct MyPoint {
+  float coords[3];
+};
+
+// Specialize PointTraits for your point type
+template <>
+struct PointTraits<MyPoint> {
+  static constexpr int DIM = 3;  // your custom point dimensionality
+  
+  static inline float coord(const MyPoint& pt, int axis) {
+    return pt.coords[axis];
+  }
+  static inline float sqrDist(const MyPoint& a, const MyPoint& b) {
+    float dx = a.coords[0] - b.coords[0];
+    float dy = a.coords[1] - b.coords[1];
+    float dz = a.coords[2] - b.coords[2];
+    return dx * dx + dy * dy + dz * dz;
+  }
+};
+
+// Use it like any other point type
+KDTree<MyPoint> tree;
+```
+
+For detailed examples with different point representations (arrays, getters, etc.), see [test/demo.cpp](test/demo.cpp).
+
 
 ### Python Usage
 
@@ -144,6 +177,13 @@ cmake -B build -DBUILD_BENCHMARK=ON
 cmake --build build
 ./build/benchmark
 ```
+
+### Rebuild visualization demo
+
+**Incremental add points without rebalance**
+![no-rebuild](imgs/no-rebuild.gif)
+**Incremental add points with automatic rebalance**
+![rebuild](imgs/rebuild.gif)
 
 **Note:** Benchmarks and demos require CMake to compile, but the library itself is pure header-only and needs no build step for integration into your project.
 

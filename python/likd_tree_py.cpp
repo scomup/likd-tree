@@ -54,7 +54,7 @@ PYBIND11_MODULE(likd_tree, m) {
              "points")
         
         .def("add_points", 
-             [](KDTree<PointType>& tree, py::object points_obj) {
+             [](KDTree<PointType>& tree, py::object points_obj, bool wait_for_rebuild) {
                  auto points_array = py::array_t<float>::ensure(points_obj);
                  auto buf = points_array.request();
                  if (buf.ndim != 2 || buf.shape[1] != 3) {
@@ -70,9 +70,9 @@ PYBIND11_MODULE(likd_tree, m) {
                      p.idx = g_next_point_idx++;
                      points.push_back(p);
                  }
-                 tree.addPoints(points);
+                 tree.addPoints(points, wait_for_rebuild);
              },
-             "points")
+             py::arg("points"), py::arg("wait_for_rebuild") = false)
         
         .def("nearest_neighbors",
              [](const KDTree<PointType>& tree, py::object queries_obj) {
@@ -114,10 +114,8 @@ PYBIND11_MODULE(likd_tree, m) {
              },
              "x")
         
-        .def("size", &KDTree<PointType>::size)
+        .def("size", &KDTree<PointType>::size);
         
-        .def("wait_for_rebuild", &KDTree<PointType>::waitForRebuild);
-
     // Build a snapshot by traversing the tree returned from getTree()
     m.def("get_tree_snapshot", [](const KDTree<PointType>& tree) {
         const auto* root = tree.getTree();

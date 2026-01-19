@@ -85,11 +85,10 @@ def benchmark_incremental_build():
         if i == 0:
             likd_tree.build(points[i:i+batch])
         else:
-            likd_tree.add_points(points[i:i+batch])
+            # Wait for rebuild to complete before querying
+            likd_tree.add_points(points[i:i+batch], wait_for_rebuild=True)
     d_ckdtree, idx_ckdtree = ckdtree.query(queries)
     
-    # Wait for rebuild to complete before querying
-    likd_tree.wait_for_rebuild()
     d_likd, idx_likd = likd_tree.nearest_neighbors(queries)
 
 

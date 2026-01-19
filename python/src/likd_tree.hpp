@@ -17,7 +17,6 @@ Distributed under MIT license. See LICENSE for more information.
 #include <thread>
 #include <vector>
 
-constexpr int KDTREE_DIM = 3;
 constexpr double KDTREE_ALPHA = 0.75;
 constexpr int INSERTION_BATCH_SIZE = 100;
 constexpr int MIN_SUB_NUM = 0;
@@ -27,13 +26,27 @@ constexpr int MIN_SUB_NUM = 0;
 #define TREE_PAR std::execution::seq
 #endif
 
+// Default PointTraits for point types with x, y, z members
+template <typename PointType>
+struct PointTraits {
+  static constexpr int DIM = 3;
+  static inline float coord(const PointType& pt, int axis) {
+    return axis == 0 ? pt.x : (axis == 1 ? pt.y : pt.z);
+  }
+  static inline float sqrDist(const PointType& a, const PointType& b) {
+    float dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+    return dx * dx + dy * dy + dz * dz;
+  }
+};
+
 template <typename PointType>
 using PointVector = std::vector<PointType>;
-template <typename PointType>
+
+template <typename PointType, typename Traits = PointTraits<PointType>>
 class KDTree {
  public:
   struct AABB {
-    std::array<float, KDTREE_DIM> min, max;
+    std::array<float, Traits::DIM> min, max;
     AABB();
     void expand(const PointType& pt);
     void expand(const AABB& box);
@@ -58,24 +71,16 @@ class KDTree {
   ~KDTree();
 
   void build(const PointVector<PointType>& pts);
-  void addPoints(const PointVector<PointType>& pts);
+  void addPoints(const PointVector<PointType>& pts, bool wait_for_rebuild = false);
   std::pair<const PointType*, float> nearestNeighbors(
       const PointType& query) const;
   void nearestNeighbors(const PointVector<PointType>& queries,
                         PointVector<PointType>& results,
                         std::vector<float>& distances) const;
   int size() const;
-  void waitForRebuild() const;  // Wait for rebuild, not needed for normal use (only for inmidiate requery newly inserted points)
   const Node* getTree() const;
 
  private:
-   static inline float coord(const PointType& pt, int axis) {
-    return axis == 0 ? pt.x : (axis == 1 ? pt.y : pt.z);
-  }
-  static inline float sqrDist(const PointType& a, const PointType& b) {
-    float dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
-    return dx * dx + dy * dy + dz * dz;
-  }
   Node* insertInternal(Node* node, const PointType& pt, int depth,
                        std::optional<Node**> renode);
   void update(Node* node);
@@ -95,41 +100,38 @@ class KDTree {
   std::atomic<bool> rebuilding_{false};
   PointVector<PointType> pending_points_;
   std::mutex pending_mutex_;
-
 };
 
 // AABB: axis-aligned bounding boxes
-template <typename PointType>
-KDTree<PointType>::AABB::AABB() {
-  for (int i = 0; i < KDTREE_DIM; ++i) {
+template <typename PointType, typename Traits>
+KDTree<PointType, Traits>::AABB::AABB() {
+  for (int i = 0; i < Traits::DIM; ++i) {
     min[i] = std::numeric_limits<float>::max();
     max[i] = std::numeric_limits<float>::lowest();
   }
 }
 
-template <typename PointType>
-void KDTree<PointType>::AABB::expand(const PointType& pt) {
-  min[0] = std::min(min[0], pt.x);
-  min[1] = std::min(min[1], pt.y);
-  min[2] = std::min(min[2], pt.z);
-  max[0] = std::max(max[0], pt.x);
-  max[1] = std::max(max[1], pt.y);
-  max[2] = std::max(max[2], pt.z);
+template <typename PointType, typename Traits>
+void KDTree<PointType, Traits>::AABB::expand(const PointType& pt) {
+  for (int i = 0; i < Traits::DIM; ++i) {
+    min[i] = std::min(min[i], Traits::coord(pt, i));
+    max[i] = std::max(max[i], Traits::coord(pt, i));
+  }
 }
 
-template <typename PointType>
-void KDTree<PointType>::AABB::expand(const AABB& box) {
-  for (int i = 0; i < KDTREE_DIM; ++i) {
+template <typename PointType, typename Traits>
+void KDTree<PointType, Traits>::AABB::expand(const AABB& box) {
+  for (int i = 0; i < Traits::DIM; ++i) {
     min[i] = std::min(min[i], box.min[i]);
     max[i] = std::max(max[i], box.max[i]);
   }
 }
 
-template <typename PointType>
-float KDTree<PointType>::AABB::sqrDist(const PointType& pt) const {
+template <typename PointType, typename Traits>
+float KDTree<PointType, Traits>::AABB::sqrDist(const PointType& pt) const {
   float d2 = 0;
-  for (int i = 0; i < KDTREE_DIM; ++i) {
-    float v = coord(pt, i);
+  for (int i = 0; i < Traits::DIM; ++i) {
+    float v = Traits::coord(pt, i);
     if (v < min[i])
       d2 += (min[i] - v) * (min[i] - v);
     else if (v > max[i])
@@ -138,31 +140,31 @@ float KDTree<PointType>::AABB::sqrDist(const PointType& pt) const {
   return d2;
 }
 
-template <typename PointType>
-KDTree<PointType>::Node::Node(const PointType& pt, int ax)
+template <typename PointType, typename Traits>
+KDTree<PointType, Traits>::Node::Node(const PointType& pt, int ax)
     : point(pt), axis(ax) {
   aabb.expand(pt);
 }
 
-template <typename PointType>
-KDTree<PointType>::Node::~Node() {
+template <typename PointType, typename Traits>
+KDTree<PointType, Traits>::Node::~Node() {
   delete left;
   delete right;
 }
 
-template <typename PointType>
-KDTree<PointType>::KDTree() : root_(nullptr) {}
+template <typename PointType, typename Traits>
+KDTree<PointType, Traits>::KDTree() : root_(nullptr) {}
 
-template <typename PointType>
-KDTree<PointType>::~KDTree() {
+template <typename PointType, typename Traits>
+KDTree<PointType, Traits>::~KDTree() {
   while (rebuilding_.load())
     std::this_thread::yield();
   std::unique_lock<std::shared_mutex> lock(tree_mutex_);
   delete root_;
 }
 
-template <typename PointType>
-void KDTree<PointType>::build(const PointVector<PointType>& pts) {
+template <typename PointType, typename Traits>
+void KDTree<PointType, Traits>::build(const PointVector<PointType>& pts) {
   delete root_;
   if (pts.empty()) {
     root_ = nullptr;
@@ -172,8 +174,9 @@ void KDTree<PointType>::build(const PointVector<PointType>& pts) {
   root_ = buildRecursive(tmp, 0, tmp.size(), 0);
 }
 
-template <typename PointType>
-void KDTree<PointType>::addPoints(const PointVector<PointType>& pts) {
+template <typename PointType, typename Traits>
+void KDTree<PointType, Traits>::addPoints(const PointVector<PointType>& pts,
+                                          bool wait_for_rebuild) {
   // If rebuilding, add points to pending buffer and return
   if (rebuilding_.load()) {
     std::lock_guard<std::mutex> lock(pending_mutex_);
@@ -209,12 +212,33 @@ void KDTree<PointType>::addPoints(const PointVector<PointType>& pts) {
                                std::move(nodes_to_rebuild));
     rebuild_thread.detach();
   }
+  // Optionally wait for rebuild to complete before returning
+  if (wait_for_rebuild) {
+    while (rebuilding_.load()) {
+      std::this_thread::yield();
+    }
+  }
 }
 
-template <typename PointType>
-void KDTree<PointType>::nearestNeighbors(const PointVector<PointType>& queries,
-                                         PointVector<PointType>& results,
-                                         std::vector<float>& distances) const {
+template <typename PointType, typename Traits>
+std::pair<const PointType*, float> KDTree<PointType, Traits>::nearestNeighbors(
+    const PointType& query) const {
+  std::shared_lock<std::shared_mutex> lock(tree_mutex_);
+
+  if (root_ == nullptr) {
+    return {nullptr, INFINITY};
+  }
+
+  const PointType* best_pt = nullptr;
+  float best_dist2 = INFINITY;
+  nearestNeighborInternal(root_, query, best_pt, best_dist2);
+  return {best_pt, std::sqrt(best_dist2)};
+}
+
+template <typename PointType, typename Traits>
+void KDTree<PointType, Traits>::nearestNeighbors(
+    const PointVector<PointType>& queries, PointVector<PointType>& results,
+    std::vector<float>& distances) const {
   std::shared_lock<std::shared_mutex> lock(tree_mutex_);
 
   results.resize(queries.size());
@@ -237,31 +261,27 @@ void KDTree<PointType>::nearestNeighbors(const PointVector<PointType>& queries,
   });
 }
 
-template <typename PointType>
-int KDTree<PointType>::size() const {
+template <typename PointType, typename Traits>
+int KDTree<PointType, Traits>::size() const {
   return root_ ? root_->subtree_size : 0;
 }
 
-template <typename PointType>
-void KDTree<PointType>::waitForRebuild() const {
-  while (rebuilding_.load()) {
-    std::this_thread::yield();
-  }
-}
-
-template <typename PointType>
-typename KDTree<PointType>::Node const* KDTree<PointType>::getTree() const {
+template <typename PointType, typename Traits>
+const typename KDTree<PointType, Traits>::Node* 
+KDTree<PointType, Traits>::getTree() const {
   return root_;
 }
 
-template <typename PointType>
-typename KDTree<PointType>::Node* KDTree<PointType>::insertInternal(
-    Node* node, const PointType& pt, int depth, std::optional<Node**> renode) {
+template <typename PointType, typename Traits>
+typename KDTree<PointType, Traits>::Node*
+KDTree<PointType, Traits>::insertInternal(Node* node, const PointType& pt,
+                                          int depth,
+                                          std::optional<Node**> renode) {
   if (!node)
-    return new Node(pt, depth % KDTREE_DIM);
+    return new Node(pt, depth % Traits::DIM);
   int ax = node->axis;
-  float v = coord(pt, ax);
-  float nv = coord(node->point, ax);
+  float v = Traits::coord(pt, ax);
+  float nv = Traits::coord(node->point, ax);
   if (v < nv) {
     node->left = insertInternal(node->left, pt, depth + 1, renode);
     node->left->parent = node;
@@ -281,8 +301,8 @@ typename KDTree<PointType>::Node* KDTree<PointType>::insertInternal(
   return node;
 }
 
-template <typename PointType>
-void KDTree<PointType>::update(Node* node) {
+template <typename PointType, typename Traits>
+void KDTree<PointType, Traits>::update(Node* node) {
   node->subtree_size = 1;
   node->aabb = AABB();
   node->aabb.expand(node->point);
@@ -296,8 +316,8 @@ void KDTree<PointType>::update(Node* node) {
   }
 }
 
-template <typename PointType>
-bool KDTree<PointType>::needRebuild(Node* node) const {
+template <typename PointType, typename Traits>
+bool KDTree<PointType, Traits>::needRebuild(Node* node) const {
   int lsz = node->left ? node->left->subtree_size : 0;
   int rsz = node->right ? node->right->subtree_size : 0;
   int maxsz = std::max(lsz, rsz);
@@ -305,8 +325,9 @@ bool KDTree<PointType>::needRebuild(Node* node) const {
          node->subtree_size >= MIN_SUB_NUM;
 }
 
-template <typename PointType>
-void KDTree<PointType>::collect(Node* node, PointVector<PointType>& pts) {
+template <typename PointType, typename Traits>
+void KDTree<PointType, Traits>::collect(Node* node,
+                                        PointVector<PointType>& pts) {
   if (!node)
     return;
   pts.push_back(node->point);
@@ -314,23 +335,24 @@ void KDTree<PointType>::collect(Node* node, PointVector<PointType>& pts) {
   collect(node->right, pts);
 }
 
-template <typename PointType>
-typename KDTree<PointType>::Node* KDTree<PointType>::buildRecursive(
-    PointVector<PointType>& pts, size_t l, size_t r, int axis) {
+template <typename PointType, typename Traits>
+typename KDTree<PointType, Traits>::Node*
+KDTree<PointType, Traits>::buildRecursive(PointVector<PointType>& pts, size_t l,
+                                          size_t r, int axis) {
   if (l >= r)
     return nullptr;
   size_t m = l + (r - l) / 2;
   std::nth_element(pts.begin() + l, pts.begin() + m, pts.begin() + r,
                    [&](const PointType& a, const PointType& b) {
-                     return coord(a, axis) < coord(b, axis);
+                     return Traits::coord(a, axis) < Traits::coord(b, axis);
                    });
   Node* node = new Node(pts[m], axis);
-  node->left = buildRecursive(pts, l, m, (axis + 1) % KDTREE_DIM);
+  node->left = buildRecursive(pts, l, m, (axis + 1) % Traits::DIM);
   if (node->left) {
     node->left->parent = node;
     node->left->is_left_child = true;
   }
-  node->right = buildRecursive(pts, m + 1, r, (axis + 1) % KDTREE_DIM);
+  node->right = buildRecursive(pts, m + 1, r, (axis + 1) % Traits::DIM);
   if (node->right) {
     node->right->parent = node;
     node->right->is_left_child = false;
@@ -339,21 +361,20 @@ typename KDTree<PointType>::Node* KDTree<PointType>::buildRecursive(
   return node;
 }
 
-template <typename PointType>
-void KDTree<PointType>::nearestNeighborInternal(Node* node,
-                                                const PointType& query,
-                                                const PointType*& best_pt,
-                                                float& best_dist2) const {
+template <typename PointType, typename Traits>
+void KDTree<PointType, Traits>::nearestNeighborInternal(
+    Node* node, const PointType& query, const PointType*& best_pt,
+    float& best_dist2) const {
   if (!node)
     return;
-  float d2 = sqrDist(node->point, query);
+  float d2 = Traits::sqrDist(node->point, query);
   if (d2 < best_dist2) {
     best_dist2 = d2;
     best_pt = &node->point;
   }
   int ax = node->axis;
-  float qv = coord(query, ax);
-  float nv = coord(node->point, ax);
+  float qv = Traits::coord(query, ax);
+  float nv = Traits::coord(node->point, ax);
   Node* near = qv < nv ? node->left : node->right;
   Node* far = qv < nv ? node->right : node->left;
   if (near)
@@ -362,8 +383,8 @@ void KDTree<PointType>::nearestNeighborInternal(Node* node,
     nearestNeighborInternal(far, query, best_pt, best_dist2);
 }
 
-template <typename PointType>
-bool KDTree<PointType>::checkAncestorNeedsRebuild(Node* node) const {
+template <typename PointType, typename Traits>
+bool KDTree<PointType, Traits>::checkAncestorNeedsRebuild(Node* node) const {
   Node* ancestor = node->parent;
   bool needs_rebuild = false;
   while (ancestor) {
@@ -377,8 +398,9 @@ bool KDTree<PointType>::checkAncestorNeedsRebuild(Node* node) const {
 }
 
 // Background rebuild runs in separate thread
-template <typename PointType>
-void KDTree<PointType>::backgroundRebuild(std::vector<Node*> nodes_to_rebuild) {
+template <typename PointType, typename Traits>
+void KDTree<PointType, Traits>::backgroundRebuild(
+    std::vector<Node*> nodes_to_rebuild) {
   // Pre-allocate new_nodes for thread-safe parallel access
   std::vector<Node*> new_nodes(nodes_to_rebuild.size());
 
@@ -427,8 +449,8 @@ void KDTree<PointType>::backgroundRebuild(std::vector<Node*> nodes_to_rebuild) {
 }
 
 // Insert pending points that accumulated during rebuild
-template <typename PointType>
-void KDTree<PointType>::insertPendingPoints() {
+template <typename PointType, typename Traits>
+void KDTree<PointType, Traits>::insertPendingPoints() {
   PointVector<PointType> points_to_insert;
 
   // Move pending points to local buffer
