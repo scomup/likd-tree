@@ -168,6 +168,51 @@ cmake --build build
 ./build/demo
 ```
 
+### Nearest Neighbor Search on PCD
+
+If PCL visualization is available, CMake also builds a PCD-based nearest
+neighbor demo:
+
+```bash
+cmake -B build
+cmake --build build --target nearest_search_pcd_demo
+./build/nearest_search_pcd_demo <map.pcd> <qx> <qy> <qz>
+```
+
+Example:
+
+```bash
+./build/nearest_search_pcd_demo ./test/pcd/globalMap.pcd 0.9 0.1 0
+```
+
+The demo loads a PCD map, builds a `likd-tree`, queries the nearest point to
+the input coordinate, and verifies the result with brute-force search.
+
+Example output:
+
+```text
+Loaded points: 1742788
+Finite points used: 1742788
+Build time: 318.466372 ms
+Query time: 0.010660 ms
+Query: (0.900000, 0.100000, 0.000000)
+Nearest: (0.950123, -0.076546, -1.369322)
+Distance: 1.381566
+Brute-force distance: 1.381566
+Brute-force check: MATCH
+```
+
+In the visualization, the original cloud is shown in gray, the query point in
+green, the nearest neighbor in red, and the line between them in yellow.
+
+![nearest-search-pcd](imgs/nearest_search_pcd_result.png)
+
+For terminal-only validation without opening a viewer, pass `--no-vis`:
+
+```bash
+./build/nearest_search_pcd_demo <map.pcd> <qx> <qy> <qz> --no-vis
+```
+
 ### Run Benchmark (Compare with ikd-tree)
 
 ```bash

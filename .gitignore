@@ -1,2 +1,4 @@
 build/*
 python/*.so
+/.cache/
+test/pcd/*.pcd

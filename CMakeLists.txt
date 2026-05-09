@@ -16,14 +16,37 @@ else()
 	message(STATUS "TBB not found. If you want to use #define LIKD_TREE_USE_TBB, please install TBB.")
 endif()
 
-find_package(PCL QUIET COMPONENTS common io)
+set(LIKD_TREE_PCL_FOUND OFF)
+set(LIKD_TREE_PCL_VISUALIZATION_FOUND OFF)
+
+find_package(PCL QUIET COMPONENTS common io visualization)
 if(PCL_FOUND)
-	message(STATUS "Found PCL: ${PCL_VERSION}")
-	include_directories(${PCL_INCLUDE_DIRS})
-	link_directories(${PCL_LIBRARY_DIRS})
-	add_definitions(${PCL_DEFINITIONS})
+	message(STATUS "Found PCL with visualization: ${PCL_VERSION}")
+	set(LIKD_TREE_PCL_FOUND ON)
+	set(LIKD_TREE_PCL_VISUALIZATION_FOUND ON)
+	set(LIKD_TREE_PCL_INCLUDE_DIRS ${PCL_INCLUDE_DIRS})
+	set(LIKD_TREE_PCL_LIBRARY_DIRS ${PCL_LIBRARY_DIRS})
+	set(LIKD_TREE_PCL_DEFINITIONS ${PCL_DEFINITIONS})
+	set(LIKD_TREE_PCL_LIBRARIES ${PCL_LIBRARIES})
 else()
-	message(STATUS "PCL not found; test will build with a lightweight Point struct unless PCL is available.")
+	find_package(PCL QUIET COMPONENTS common io)
+	if(PCL_FOUND)
+		message(STATUS "Found PCL: ${PCL_VERSION}")
+		message(STATUS "PCL visualization not found; nearest_search_pcd_demo will not be built.")
+		set(LIKD_TREE_PCL_FOUND ON)
+		set(LIKD_TREE_PCL_INCLUDE_DIRS ${PCL_INCLUDE_DIRS})
+		set(LIKD_TREE_PCL_LIBRARY_DIRS ${PCL_LIBRARY_DIRS})
+		set(LIKD_TREE_PCL_DEFINITIONS ${PCL_DEFINITIONS})
+		set(LIKD_TREE_PCL_LIBRARIES ${PCL_LIBRARIES})
+	else()
+		message(STATUS "PCL not found; test will build with a lightweight Point struct unless PCL is available.")
+	endif()
+endif()
+
+if(LIKD_TREE_PCL_FOUND)
+	include_directories(${LIKD_TREE_PCL_INCLUDE_DIRS})
+	link_directories(${LIKD_TREE_PCL_LIBRARY_DIRS})
+	add_definitions(${LIKD_TREE_PCL_DEFINITIONS})
 endif()
 
 add_library(kdtree INTERFACE)
@@ -32,13 +55,27 @@ if(TBB_FOUND)
   target_link_libraries(kdtree INTERFACE TBB::tbb)
 endif()
 
+find_package(Threads REQUIRED)
+
 # Demo executable (always built)
 add_executable(demo 
 test/demo.cpp
 )
-target_link_libraries(demo kdtree ${PCL_LIBRARIES})
-find_package(Threads REQUIRED)
+target_link_libraries(demo kdtree ${LIKD_TREE_PCL_LIBRARIES})
 target_link_libraries(demo Threads::Threads)
+
+if(LIKD_TREE_PCL_VISUALIZATION_FOUND)
+  add_executable(nearest_search_pcd_demo
+    test/nearest_search_pcd_demo.cpp
+  )
+  target_link_libraries(nearest_search_pcd_demo
+    kdtree
+    ${LIKD_TREE_PCL_LIBRARIES}
+    Threads::Threads
+  )
+else()
+  message(STATUS "nearest_search_pcd_demo disabled. Install PCL visualization to enable it.")
+endif()
 
 # Benchmark executable (only built with -DBUILD_BENCHMARK=ON)
 option(BUILD_BENCHMARK "Build benchmark comparing likd-tree vs ikd-tree" OFF)
@@ -80,8 +117,7 @@ if(BUILD_BENCHMARK)
     thirdparty/ikd-Tree/ikd-Tree/ikd_Tree.cpp
   )
   target_include_directories(benchmark PRIVATE thirdparty/ikd-Tree/ikd-Tree)
-  target_link_libraries(benchmark kdtree ${PCL_LIBRARIES} Threads::Threads)
+  target_link_libraries(benchmark kdtree ${LIKD_TREE_PCL_LIBRARIES} Threads::Threads)
 else()
   message(STATUS "Benchmark disabled. Use -DBUILD_BENCHMARK=ON to enable.")
 endif()
-
